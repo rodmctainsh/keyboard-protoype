@@ -1,0 +1,67 @@
+body {
+	cursor: text;
+}
+
+#output {
+	font-size: 12px;
+}
+
+#output p {
+	padding: 0;
+	margin: 0;
+}
+
+#output p span {
+	box-sizing: border-box;
+	display: inline-block;
+	height: 14px;
+}
+
+#output p span.current::after {
+	position: absolute;
+	height: 14px;
+	content: "";
+	border-right: solid 1px #000;
+}
+
+#output p span.selected {
+	background-color: #666;
+}
+
+#board {
+	position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+	#board {
+		
+	}
+}
+
+#board .row {
+	text-align: center;
+}
+
+#board .row .key {
+	display: inline-block;
+    vertical-align: top;
+    border: solid 1px transparent;
+    box-sizing: border-box;
+    cursor: pointer;
+    background-color: rgba(200,200,200,0.2);
+    font-size: 18px;
+    line-height: 18px;
+    color: #aaa;
+}
+
+#board .row .key.down {
+	background-color: rgba(150,150,150,0.2);
+}
+
+#board .row .key.up {
+	border: solid 1px #666;
+}
