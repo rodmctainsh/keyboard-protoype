@@ -1,22 +1,3 @@
-/*
-
-keyboard
---------
-split to the sides on mobile landscape
-workout how to display mobile portrait keyboard
-
-
-
-
-text editor
------------
-fix word shift
-fix selection
-clipboard - copy/paste new lines
-tab spacing
-
-*/
-
 $(function() {
 	window.output = $('#output');
 	window.select_start = null;
