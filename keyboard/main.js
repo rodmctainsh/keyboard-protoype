@@ -323,9 +323,9 @@ function addChar(char, current) {
 
 function getKeys() {
 	return [
-		['tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-		['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', /*[';', ':'], ['\'', '"'],*/ 'enter'],
-		['z', 'x', 'c', 'v', 'b', 'n', 'm', /*[',', '<']*/],
+		['tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', ['[', '{'], [']', '}']/*, ['\\', '|']*/],
+		['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', [';', ':'], ['\'', '"'], 'enter'],
+		['z', 'x', 'c', 'v', 'b', 'n', 'm', [',', '<'], ['.', '>']/*, ['/', '?']*/],
 		['space']
 	];
 }
@@ -336,36 +336,20 @@ function drawKeyboard() {
 	keys.forEach(function(row) {
 		var row_element = $('<div class="row"/>');
 		row.forEach(function(character) {
-			var test_char,
-				display_char,
-				keys_wide;
+			var meta = getKeyMeta(character);
 
-			// this is crap
-			switch (character) {
-				case 'enter':
-					test_char = character;
-					display_char = character.toUpperCase();
-					keys_wide = 2;
-					break;
-				case 'tab':
-					test_char = '\t';
-					display_char = character.toUpperCase();
-					keys_wide = 2;
-					break;
-				case 'space':
-					test_char = ' ';
-					display_char = character.toUpperCase();
-					keys_wide = 4;
-					break;
-				default:
-					test_char = character.toUpperCase();
-					display_char = test_char;
-					keys_wide = 1;
+			window.max_keys_wide = Math.max(window.max_keys_wide, meta.main.keys_wide);
+
+			var key_element = $('<div class="key" data-def-char="' + meta.main.character + '" data-key="' + getKeyCode(meta.main.test_char) + '" data-keys-wide="' + meta.main.keys_wide + '"/>'),
+				text_element = $('<div/>').addClass('text');
+
+			if (meta.shift) {
+				key_element.attr('data-shift-key', getKeyCode(meta.shift.test_char));
+				text_element.append($('<span>').text(meta.shift.display_char));
 			}
 
-			window.max_keys_wide = Math.max(window.max_keys_wide, keys_wide);
-
-			var key_element = $('<div class="key" data-def-char="' + character + '" data-key="' + getKeyCode(test_char) + '" data-keys-wide="' + keys_wide + '"/>').text(display_char);
+			text_element.append($('<span>').text(meta.main.display_char));
+			key_element.append(text_element);
 
 			key_element.on("touchstart mousedown", function(e) {
 				if ((e.type == 'mousedown') && (window.layout_name < window.LAYOUT_DESKTOP)) {
@@ -405,11 +389,64 @@ function drawKeyboard() {
 	$(document.body).append(board);
 }
 
+function getKeyMeta(characters) {
+	var meta = {
+		main: {},
+		shift: null
+	};
+
+	if (typeof characters == 'string') {
+		characters = [characters];
+	}
+
+	var keys = [];
+
+	characters.forEach(function(character) {
+		var key = {character: character};
+
+		// this is crap
+		switch (character) {
+			case 'enter':
+				key.test_char = character;
+				key.display_char = character.toUpperCase();
+				key.keys_wide = 2;
+				break;
+			case 'tab':
+				key.test_char = '\t';
+				key.display_char = character.toUpperCase();
+				key.keys_wide = 2;
+				break;
+			case 'space':
+				key.test_char = ' ';
+				key.display_char = character.toUpperCase();
+				key.keys_wide = 4;
+				break;
+			default:
+				key.test_char = character.toUpperCase();
+				key.display_char = key.test_char;
+				key.keys_wide = 1;
+		}
+
+		keys.push(key);
+	});
+
+	// Main key is the first
+	meta.main = keys[0];
+
+	if (keys.length > 1) {
+		// Shift key is the second
+		meta.shift = keys[1];
+	}
+
+	return meta;
+}
+
 function getMaxKeysAcross() {
 	var key_rows = getKeys();
 	return key_rows.reduce(function(previous_row_length, current_row, current_index, array) {
 		return Math.max(previous_row_length, current_row.reduce(function(current_total, current_key) {
-			return current_total + parseInt($('.key[data-def-char="' + current_key + '"]').data('keys-wide'), 10);
+			var def_char = (typeof current_key == 'string') ? current_key : current_key[0];
+			return current_total + parseInt($('.key[data-def-char="' + def_char + '"]').data('keys-wide'), 10);
 		}, 0));
 	}, 0);
 }
@@ -429,12 +466,12 @@ function resizeKeyboard(size) {
 		$('.key[data-keys-wide="' + keys_wide + '"]')
 			.css('width', wide_side + 'px')
 			.css('height', key_side + 'px')
-			.css('font-size', (key_side / 4) + 'px')
-			.css('line-height', key_side + 'px');
+			.css('font-size', (key_side / 4) + 'px');
 	}
 }
 
 function flashKeyDown(key_code) {
+	console.log('flashKeyDown', key_code);
 	$('.key[data-key="' + key_code + '"]')
 		.addClass('down');
 }
@@ -454,6 +491,8 @@ function getKeyCode(character) {
 	switch (character) {
 		case 'enter':
 			return 13;
+		case ',': // comma
+			return 188; // Comes back as 44 with charCodeAt
 		default:
 			return character.charCodeAt(0);
 	}

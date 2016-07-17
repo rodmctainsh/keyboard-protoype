@@ -57,6 +57,20 @@ body {
     font-size: 18px;
     line-height: 18px;
     color: #aaa;
+    position: relative;
+}
+
+#board .row .key .text {
+	position: absolute;
+    transform: translateY(-50%);
+    top: 50%;
+    width: 100%;
+}
+
+#board .row .key .text span {
+	display: block;
+	padding: 5px 0;
+	line-height: 1em;
 }
 
 #board .row .key.down {
