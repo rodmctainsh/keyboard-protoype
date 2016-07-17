@@ -8,15 +8,18 @@ $(function() {
 	window.LAYOUT_DESKTOP = 3;
 	window.LAYOUT_TABLET = 2;
 	window.LAYOUT_MOBILE = 1;
+	window.ORIENTATION_PORTRAIT = 1;
+	window.ORIENTATION_LANDSCAPE = 1;
 	window.layout_name = null;
+	window.orientation_name = null;
 
 	drawKeyboard();
+	rePositionKeyboard();
 	resizeKeyboard();
 
 	$(window).resize(function() {
+		// Recalculate the layout and orientation
 		var size = getWindowSize();
-		resizeKeyboard(size);
-
 		if (size.width <= 1024) {
 			window.layout_name = window.LAYOUT_TABLET;
 			if (size.width <= 768) {
@@ -25,10 +28,21 @@ $(function() {
 		} else {
 			window.layout_name = window.LAYOUT_DESKTOP;
 		}
+
+		if (size.width < size.height) {
+			window.orientation_name = window.ORIENTATION_PORTRAIT;
+		} else {
+			window.orientation_name = window.ORIENTATION_LANDSCAPE;
+		}
+
+		// Update the keyboard
+		rePositionKeyboard(size);
+		resizeKeyboard(size);
 	}).trigger('resize');
 
 	$(document).bind('keydown', function(e, e_override) {
 		var done = true,
+			trigger_press = false,
 			current = $('.current');
 
 		if ((typeof e_override != 'undefined') && e_override) {
@@ -179,7 +193,8 @@ $(function() {
 				}
 			}
 		} else if (e.which == 9) {
-			// tab - ignore
+			// tab
+			trigger_press = true;
 		} else if ((e.which == 67) && e.metaKey) {
 			// copy
 			clipboard = $('.selected').toArray().reduce(function(previousValue, currentValue, index, array) {
@@ -200,6 +215,9 @@ $(function() {
 
 		if (done) {
 			e.preventDefault();
+			if (trigger_press) {
+				$(this).trigger('keypress', e);
+			}
 		}
 	})
 	.bind("keypress", function(e, e_override) {
@@ -305,8 +323,8 @@ function addChar(char, current) {
 
 function getKeys() {
 	return [
-		['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-		[   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'  ],
+		['tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+		[   'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', /*[':',';'], ['"','\''],*/ 'enter'],
 		[       'z', 'x', 'c', 'v', 'b', 'n', 'm'        ],
 		[                     'space'                    ]
 	];
@@ -324,10 +342,20 @@ function drawKeyboard() {
 
 			// this is crap
 			switch (character) {
+				case 'enter':
+					test_char = character;
+					display_char = character.toUpperCase();
+					keys_wide = 2;
+					break;
+				case 'tab':
+					test_char = '\t';
+					display_char = character.toUpperCase();
+					keys_wide = 2;
+					break;
 				case 'space':
 					test_char = ' ';
-					display_char = ('space').toUpperCase();
-					keys_wide = 5;
+					display_char = character.toUpperCase();
+					keys_wide = 4;
 					break;
 				default:
 					test_char = character.toUpperCase();
@@ -337,10 +365,9 @@ function drawKeyboard() {
 
 			window.max_keys_wide = Math.max(window.max_keys_wide, keys_wide);
 
-			var key_element = $('<div class="key" data-key="' + getKeyCode(test_char) + '" data-keys-wide="' + keys_wide + '"/>').text(display_char);
+			var key_element = $('<div class="key" data-def-char="' + character + '" data-key="' + getKeyCode(test_char) + '" data-keys-wide="' + keys_wide + '"/>').text(display_char);
 
 			key_element.on("touchstart mousedown", function(e) {
-				console.log(window.layout_name, window.LAYOUT_DESKTOP);
 				if ((e.type == 'mousedown') && (window.layout_name < window.LAYOUT_DESKTOP)) {
 					return;
 				}
@@ -379,10 +406,16 @@ function drawKeyboard() {
 }
 
 function getMaxKeysAcross() {
-	var keys = getKeys();
-	return keys.reduce(function(previousValue, currentValue, currentIndex, array) {
-		return Math.max(previousValue, currentValue.length);
+	var key_rows = getKeys();
+	return key_rows.reduce(function(previous_row_length, current_row, current_index, array) {
+		return Math.max(previous_row_length, current_row.reduce(function(current_total, current_key) {
+			return current_total + parseInt($('.key[data-def-char="' + current_key + '"]').data('keys-wide'), 10);
+		}, 0));
 	}, 0);
+}
+
+function rePositionKeyboard(size) {
+	var size = size ? size : getWindowSize();
 }
 
 function resizeKeyboard(size) {
@@ -417,7 +450,13 @@ function flashKeyUp(key_code) {
 }
 
 function getKeyCode(character) {
-	return character.charCodeAt(0);
+	// Hacks
+	switch (character) {
+		case 'enter':
+			return 13;
+		default:
+			return character.charCodeAt(0);
+	}
 }
 
 function getWindowSize() {
