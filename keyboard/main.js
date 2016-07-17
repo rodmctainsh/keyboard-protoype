@@ -22,8 +22,10 @@ $(function() {
 			if (size.width <= 768) {
 				window.layout_name = window.LAYOUT_MOBILE;
 			}
+		} else {
+			window.layout_name = window.LAYOUT_DESKTOP;
 		}
-	});
+	}).trigger('resize');
 
 	$(document).bind('keydown', function(e, e_override) {
 		var done = true,
@@ -338,6 +340,7 @@ function drawKeyboard() {
 			var key_element = $('<div class="key" data-key="' + getKeyCode(test_char) + '" data-keys-wide="' + keys_wide + '"/>').text(display_char);
 
 			key_element.on("touchstart mousedown", function(e) {
+				console.log(window.layout_name, window.LAYOUT_DESKTOP);
 				if ((e.type == 'mousedown') && (window.layout_name < window.LAYOUT_DESKTOP)) {
 					return;
 				}
