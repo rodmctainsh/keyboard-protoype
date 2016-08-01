@@ -227,6 +227,8 @@ $(function() {
 
 		e.preventDefault();
 
+		console.log('keypress', e.which);
+
 		var current = $('.current');
 		current.removeClass('current');
 
@@ -340,7 +342,7 @@ function drawKeyboard() {
 
 			window.max_keys_wide = Math.max(window.max_keys_wide, meta.main.keys_wide);
 
-			var key_element = $('<div class="key" data-def-char="' + meta.main.character + '" data-key="' + getKeyCode(meta.main.test_char) + '" data-keys-wide="' + meta.main.keys_wide + '"/>'),
+			var key_element = $('<div class="key" data-def-char="' + meta.main.character + '" data-key="' + getKeyCode(meta.main.test_char) + '" data-keypress="' + getKeyCode(meta.main.test_char, true) + '" data-keys-wide="' + meta.main.keys_wide + '"/>'),
 				text_element = $('<div/>').addClass('text');
 
 			if (meta.shift) {
@@ -364,7 +366,7 @@ function drawKeyboard() {
 					preventDefault: function() {}
 				}])
 				.trigger('keypress', [{
-					which: $(this).data('key'),
+					which: $(this).data('keypress'),
 					shiftKey: null,
 					altKey: null,
 					metaKey: null,
@@ -486,13 +488,15 @@ function flashKeyUp(key_code) {
 	}, 100);
 }
 
-function getKeyCode(character) {
+function getKeyCode(character, for_keypress) {
+	for_keypress = (typeof for_keypress == 'undefined') ? false : for_keypress;
+
 	// Hacks
 	switch (character) {
 		case 'enter':
 			return 13;
 		case ',': // comma
-			return 188; // Comes back as 44 with charCodeAt
+			return for_keypress ? 44 : 188;
 		default:
 			return character.charCodeAt(0);
 	}
