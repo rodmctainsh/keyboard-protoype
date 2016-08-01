@@ -495,8 +495,18 @@ function getKeyCode(character, for_keypress) {
 	switch (character) {
 		case 'enter':
 			return 13;
-		case ',': // comma
+		case ',':
 			return for_keypress ? 44 : 188;
+		case '.':
+			return for_keypress ? 46 : 190;
+		case ';':
+			return for_keypress ? 59 : 186;
+		case '\'':
+			return for_keypress ? 39 : 222;
+		case '[':
+			return for_keypress ? 91 : 219;
+		case ']':
+			return for_keypress ? 93 : 221;
 		default:
 			return character.charCodeAt(0);
 	}
