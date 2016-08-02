@@ -4,6 +4,7 @@ $(function() {
 	window.select_end = null;
 	window.clipboard = null;
 	window.max_keys_wide = 0;
+	window.alt_trigger_down = [];
 
 	window.LAYOUT_DESKTOP = 3;
 	window.LAYOUT_TABLET = 2;
@@ -325,9 +326,9 @@ function addChar(char, current) {
 
 function getKeys() {
 	return [
-		['tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', ['[', '{'], [']', '}']/*, ['\\', '|']*/],
+		['tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', ['[', '{'], [']', '}'], ['backslash', '|']],
 		['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', [';', ':'], ['\'', '"'], 'enter'],
-		['z', 'x', 'c', 'v', 'b', 'n', 'm', [',', '<'], ['.', '>']/*, ['/', '?']*/],
+		['lshift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', [',', '<'], ['.', '>'], ['/', '?'], 'rshift'],
 		['space']
 	];
 }
@@ -358,16 +359,22 @@ function drawKeyboard() {
 					return;
 				}
 
+				if (e.type == 'mousedown') {
+					// Cancel the alt trigger for this key
+					var key_attr = $(this).data('key');
+					removeTrigger(key_attr, meta.main.alt_trigger);
+				}
+
 				$(document).trigger('keydown', [{
 					which: $(this).data('key'),
-					shiftKey: null,
+					shiftKey: triggerCheck('shift'),
 					altKey: null,
 					metaKey: null,
 					preventDefault: function() {}
 				}])
 				.trigger('keypress', [{
 					which: $(this).data('keypress'),
-					shiftKey: null,
+					shiftKey: triggerCheck('shift'),
 					altKey: null,
 					metaKey: null,
 					preventDefault: function() {}
@@ -376,12 +383,19 @@ function drawKeyboard() {
   			.on("touchend touchcancel mouseup", function() {
 				$(document).trigger('keyup', [{
 					which: $(this).data('key'),
-					shiftKey: null,
+					shiftKey: triggerCheck('shift'),
 					altKey: null,
 					metaKey: null,
 					preventDefault: function() {}
 				}]);
 			});
+
+  			if (meta.main.alt_trigger) {
+  				key_element.on("dblclick", function(e) {
+  					var key_attr = $(this).data('key');
+  					setTrigger(key_attr, meta.main.alt_trigger);
+  				});
+  			}
 
 			row_element.append(key_element);
 		});
@@ -389,6 +403,24 @@ function drawKeyboard() {
 	})
 
 	$(document.body).append(board);
+}
+
+function setTrigger(key_code, trigger_name) {
+	if (!window.alt_trigger_down[trigger_name]) {
+		window.alt_trigger_down[trigger_name] = true;
+		flashKeyDown(key_code);
+	}
+}
+
+function removeTrigger(key_code, trigger_name) {
+	if (window.alt_trigger_down[trigger_name]) {
+		window.alt_trigger_down[trigger_name] = false;
+		flashKeyUp(key_code);
+	}
+}
+
+function triggerCheck(trigger_name) {
+	return !!window.alt_trigger_down[trigger_name];
 }
 
 function getKeyMeta(characters) {
@@ -404,7 +436,7 @@ function getKeyMeta(characters) {
 	var keys = [];
 
 	characters.forEach(function(character) {
-		var key = {character: character};
+		var key = {character: character, alt_trigger: false};
 
 		// this is crap
 		switch (character) {
@@ -422,6 +454,18 @@ function getKeyMeta(characters) {
 				key.test_char = ' ';
 				key.display_char = character.toUpperCase();
 				key.keys_wide = 4;
+				break;
+			case 'backslash':
+				key.test_char = '\\';
+				key.display_char = key.test_char.toUpperCase();
+				key.keys_wide = 1;
+				break;
+			case 'lshift':
+			case 'rshift':
+				key.test_char = 'shift';
+				key.display_char = 'SHIFT';
+				key.keys_wide = 2;
+				key.alt_trigger = 'shift';
 				break;
 			default:
 				key.test_char = character.toUpperCase();
@@ -507,6 +551,12 @@ function getKeyCode(character, for_keypress) {
 			return for_keypress ? 91 : 219;
 		case ']':
 			return for_keypress ? 93 : 221;
+		case '/':
+			return for_keypress ? 47 : 191;
+		case '\\':
+			return for_keypress ? 92 : 220;
+		case 'shift':
+			return 16;
 		default:
 			return character.charCodeAt(0);
 	}
